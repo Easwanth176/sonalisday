@@ -1,18 +1,13 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Great_Vibes } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const display = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["500", "600"],
-  variable: "--font-display",
-});
-
-const script = Great_Vibes({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-script",
-});
+const railey = localFont({ src: "./fonts/railey.woff", variable: "--font-railey" });
+const pony = localFont({ src: "./fonts/ponyclub.woff", variable: "--font-pony" });
+const lazy = localFont({ src: "./fonts/lazydog.woff", variable: "--font-lazy" });
+const crafty = localFont({ src: "./fonts/craftygirls.woff", variable: "--font-crafty" });
+const anaktoria = localFont({ src: "./fonts/anaktoria.woff", variable: "--font-anaktoria" });
+const arimo = localFont({ src: "./fonts/arimo.woff", variable: "--font-arimo" });
 
 export const metadata: Metadata = {
   title: "Happiest Birthday, Sonali",
@@ -26,7 +21,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${display.variable} ${script.variable}`}>{children}</body>
+      <body className={`${railey.variable} ${pony.variable} ${lazy.variable} ${crafty.variable} ${anaktoria.variable} ${arimo.variable}`}>
+        {children}
+      </body>
     </html>
   );
 }

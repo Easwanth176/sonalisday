@@ -1,5 +1,10 @@
 :root {
-  color-scheme: dark;
+  color-scheme: light;
+  --paper: #f6f1e4;
+  --dot: #8eb6e6;
+  --ink: #2c261f;
+  --ribbon: #c5daf2;
+  --ribbon-ink: #243044;
 }
 
 * {
@@ -14,46 +19,24 @@ body {
 }
 
 body {
-  min-height: 100vh;
-  background:
-    radial-gradient(circle at 20% 15%, rgba(255, 196, 214, 0.45), transparent 32%),
-    radial-gradient(circle at 80% 80%, rgba(244, 201, 93, 0.28), transparent 28%),
-    linear-gradient(160deg, #2a1024 0%, #5c2344 48%, #1b1020 100%);
-  color: #fff8f2;
+  min-height: 100dvh;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-arimo), Georgia, sans-serif;
+  -webkit-tap-highlight-color: transparent;
 }
 
-main {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 2rem;
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
 }
 
-p {
-  font-family: var(--font-display), Georgia, serif;
-  letter-spacing: 0.42em;
-  text-transform: uppercase;
-  font-size: 0.78rem;
-  color: #f4c95d;
-}
-
-h1 {
-  margin-top: 1rem;
-  max-width: 12ch;
-  font-family: var(--font-display), Georgia, serif;
-  font-weight: 500;
-  font-size: clamp(3.2rem, 9vw, 7rem);
-  line-height: 0.95;
-}
-
-h1 span {
-  display: block;
-  margin-top: 0.15em;
-  font-family: var(--font-script), cursive;
-  font-size: 1.15em;
-  font-weight: 400;
-  color: #ffd6e4;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

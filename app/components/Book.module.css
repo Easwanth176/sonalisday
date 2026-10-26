@@ -1,0 +1,144 @@
+.fit {
+  width: 100vw;
+  height: 100dvh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #f6f1e4 url("/canva/66046037705b2756cef2b9a86fb46b98.png") center / 520px auto;
+}
+
+.stage {
+  position: relative;
+  width: 1366px;
+  height: 768px;
+  flex: none;
+  overflow: hidden;
+  background: #f6f1e4 url("/canva/66046037705b2756cef2b9a86fb46b98.png") center / 520px auto;
+  transform-origin: center center;
+}
+
+.piece {
+  position: absolute;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: none;
+  color: inherit;
+  text-align: inherit;
+}
+
+.piece:focus-visible {
+  outline: 2px solid #243044;
+  outline-offset: 2px;
+}
+
+.shape {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 6px 0 rgba(36, 48, 68, 0.18));
+}
+
+.label {
+  position: absolute;
+  inset: 0;
+  white-space: pre-wrap;
+  pointer-events: none;
+}
+
+.countdown {
+  position: absolute;
+  left: 50%;
+  top: 188px;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 280px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.present {
+  width: 196px;
+  height: auto;
+  margin-top: 12px;
+}
+
+.count {
+  margin: 0;
+  padding-bottom: 48px;
+  text-align: center;
+  font-family: var(--font-railey), cursive;
+  font-size: 168px;
+  line-height: 0.82;
+  color: #161616;
+  animation: pop 0.4s ease;
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.55);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.dump {
+  position: absolute;
+  z-index: 2;
+  padding: 12px 12px 30px;
+  overflow: hidden;
+  background: #f6f1e4;
+  box-shadow: 0 8px 0 rgba(36, 48, 68, 0.14);
+  pointer-events: none;
+}
+
+.dump img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.dump::before,
+.dump::after {
+  content: "";
+  position: absolute;
+  width: 72px;
+  height: 18px;
+  background: repeating-linear-gradient(90deg, #243e66 0 6px, #31517f 6px 10px, #1c3354 10px 14px);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.35) inset;
+}
+
+.dump::before {
+  top: 8px;
+  left: 18px;
+  transform: rotate(-8deg);
+}
+
+.dump::after {
+  right: 10px;
+  bottom: 16px;
+  transform: rotate(12deg);
+}
+
+.sound {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.86);
+  color: #243044;
+  font-size: 18px;
+  box-shadow: 0 2px 8px rgba(36, 48, 68, 0.18);
+}
