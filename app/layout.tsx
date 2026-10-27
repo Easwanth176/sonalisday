@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 
@@ -12,6 +12,12 @@ const arimo = localFont({ src: "./fonts/arimo.woff", variable: "--font-arimo" })
 export const metadata: Metadata = {
   title: "Happiest Birthday, Sonali",
   description: "Happiest Birthday, Sonali",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

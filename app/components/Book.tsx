@@ -61,6 +61,31 @@ const fontFamily: Record<string, string> = {
 const forHer =
   "Happy birthday to the woman who makes my world brighter. I don't say it enough, but I'm endlessly grateful for your kindness, your strength, and the way you love me so effortlessly. Watching you grow, chase your dreams, and stay true to yourself inspires me every day. I hope this new year brings you success, peace, and all the joy you give so freely to others. Thank you for being exactly who you are. I love you more than words could ever capture.\nHappy birthday, my love.";
 
+const friendLetters = [
+  {
+    from: "Gun Gun",
+    text: "Happy Birthday, Sona.\n\nI'm genuinely so grateful that you came into my life. When I started my MBA at LPU, I never thought I would find such a beautiful friendship here, and somehow you became my first and one of my closest friends.\n\nFrom helping each other with assignments, especially your last-minute assignments, to calling each other for the smallest things, sharing random talks and making so many memories together, you've made my MBA journey so much smoother and happier.\n\nAnd getting to spend time together in Amritsar, visiting the Golden Temple and clicking those pictures are memories I'll always cherish.\n\nThank you for always being there, for all your help, your care, your calls, and simply for being you. I'm really happy that our paths crossed and that I got a friend like you.\n\nI hope this birthday brings you all the happiness, success and love you deserve. Keep smiling, keep shining, and never change.\n\nHappy Birthday once again, Sona.\nThank you for coming into my life and making this journey a little more special.\n\nGun Gun",
+  },
+  {
+    from: "Srija",
+    text: "Happy birthday Sonali,\n\na precious girl who came to my life on a random moment of unbelievable LPU stress. I just cannot express how much I adore you. How much I love you. Your charm always makes me smile and think of your innocence. Life is better with you in LPU. When you get a person with whom sharing laughter and emotions feels safe is a win-win situation, and I got you in my life as an angel.\n\nHappy birthday angel. Don't forget that you deserve the world.\n\nSrija",
+  },
+  {
+    from: "Anju",
+    text: "Happy Birthday to one of my favourite people, SONU.\n\nWho knew that while pursuing our MBA, I would find not just a friend but someone who would become such an important part of my life? From classes, assignments and exams to random talks and endless laughter, I'm so glad I get to experience this journey with you.\n\nAnd how can I forget our everyday mess adventures, eating there without even opting for the mess and sitting like we literally owned the place, our Eastwood memories, and Dharamshala, where we literally fought over pictures. These little moments might seem silly, but they'll always be some of my favourite memories with you.\n\nI'm genuinely so grateful to have you by my side. College wouldn't be the same without you, and I hope that even after our MBA, we stay just as close, keep making crazy memories, and celebrate each other's successes.\n\nMay you get all the happiness, love, and success you deserve. Love you so much, bestie. Here's to our MBA journey, our crazy memories, and a friendship that lasts a lifetime.\n\nAnju",
+  },
+  {
+    from: "Lucky",
+    text: "Happy Birthday to my forever person, my childhood best friend, and a beautiful part of my life.\n\nWe didn't just grow up together; we grew through life together. From our childhood memories to the people we are today, you have been a part of so many chapters of my life. We have shared laughter, silly fights, countless memories, secrets, tears, and moments that no one else could ever understand the way we do.\n\nYou are not just my best friend; you are a piece of my childhood, a part of my heart, and someone who will always have a special place in my life. No matter how much we grow, how busy life gets, or how many things change around us, the bond we share will always mean the world to me.\n\nSometimes, words are not enough to explain how much a person means to us, and you are that person for me. I'm so grateful that life gave me a friend like you, someone who has known me since the beginning and has been part of my journey for so long. If I could choose my childhood all over again, I would still choose you as my best friend, every single time.\n\nOn your birthday, I wish you all the happiness, love, success, and peace your heart deserves. May life give you a thousand reasons to smile, and may you never forget how special you are to me.\n\nYears may pass, people may change, and life may take us in different directions, but you will always be my childhood best friend and one of my favourite parts of life.\n\nHappy Birthday, my girl. I love you more than these words can ever explain. Here's to our old memories, our present bond, and all the beautiful memories we still have to create together.\n\nLucky",
+  },
+];
+
+const stripIds = ["063cdcca", "f0bb9fd0", "32d3ba5c", "2d26fa6f"];
+
+function isStrip(node: PieceNode) {
+  return stripIds.some((id) => node.image?.startsWith(id));
+}
+
 const friendDump = [
   { src: "/photos/friends/autumn.jpg", focus: "center 44%", x: 28, y: 24, w: 270, h: 350, rot: -8, zoom: 1.3 },
   { src: "/photos/friends/swings.jpg", focus: "center 30%", x: 250, y: 70, w: 250, h: 340, rot: 5, zoom: 1 },
@@ -70,7 +95,7 @@ const friendDump = [
 function words(text: string) {
   if (text.includes("the man who")) return forHer;
   if (text.includes("Blow out the Candles")) return "Get ready !!!";
-  if (text.includes("Some flowers")) return "Your friends !!";
+  if (text.includes("Some flowers")) return "From your friends !!";
   return text.replaceAll("[Name]", "Sonali").replaceAll("[Your Name]", "Easwanth");
 }
 
@@ -241,22 +266,39 @@ function Piece({
 }
 
 export default function Book() {
+  const fitRef = useRef<HTMLElement>(null);
   const [page, setPage] = useState(0);
-  const [scale, setScale] = useState(1);
+  const [scale, setScale] = useState(0);
   const [on, setOn] = useState(true);
   const [flee, setFlee] = useState<Record<string, { x: number; y: number }>>({});
   const [count, setCount] = useState(3);
+  const [letter, setLetter] = useState(0);
   const audio = useRef<AudioContext | null>(null);
   const timer = useRef<number | null>(null);
   const onRef = useRef(true);
 
   useEffect(() => {
-    const fit = () => setScale(Math.min(window.innerWidth / STAGE_W, window.innerHeight / STAGE_H));
+    const box = fitRef.current;
+    if (!box) return;
+    const fit = () => {
+      const view = window.visualViewport;
+      const width = Math.min(box.clientWidth, view?.width ?? window.innerWidth);
+      const height = Math.min(box.clientHeight, view?.height ?? window.innerHeight);
+      if (!width || !height) return;
+      setScale(Math.min(width / STAGE_W, height / STAGE_H));
+    };
     fit();
-    window.addEventListener("resize", fit);
+    const observer = new ResizeObserver(fit);
+    observer.observe(box);
+    window.addEventListener("orientationchange", fit);
+    window.visualViewport?.addEventListener("resize", fit);
     const asked = Number(new URLSearchParams(window.location.search).get("p"));
     if (Number.isFinite(asked) && asked >= 0 && asked < pages.length) setPage(asked);
-    return () => window.removeEventListener("resize", fit);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("orientationchange", fit);
+      window.visualViewport?.removeEventListener("resize", fit);
+    };
   }, []);
 
   useEffect(() => {
@@ -317,13 +359,14 @@ export default function Book() {
   const current = pages[page] as { nodes: PieceNode[] };
 
   return (
-    <main className={styles.fit}>
+    <main className={styles.fit} ref={fitRef}>
       <button className={styles.sound} onClick={toggle} aria-label={on ? "Pause music" : "Play music"}>
         {on ? "♪" : "×"}
       </button>
+      <div className={styles.frame} style={{ width: STAGE_W * scale, height: STAGE_H * scale }}>
       <div className={styles.stage} style={{ transform: `scale(${scale})` }}>
         {current.nodes.map((node, index) =>
-          (page === 1 && hideOnCountdown(node)) || (page === 6 && hideLetter(node)) ? null : (
+          (page === 1 && hideOnCountdown(node)) || (page === 6 && hideLetter(node)) || (page === 7 && isStrip(node)) ? null : (
             <Piece key={`${page}-${index}`} id={`${page}-${index}`} node={node} onGo={go} flee={flee[`${page}-${index}`]} onRun={run} />
           ),
         )}
@@ -333,6 +376,29 @@ export default function Book() {
               <img src={shot.src} alt="" style={{ objectPosition: shot.focus, transform: `scale(${shot.zoom})` }} />
             </div>
           ))}
+        {page === 7 && (
+          <div className={styles.letters}>
+            <p className={styles.note}>{friendLetters[letter].text}</p>
+            <div className={styles.turns}>
+              <button type="button" onClick={() => setLetter((index) => (index + friendLetters.length - 1) % friendLetters.length)} aria-label="Previous letter">
+                ‹
+              </button>
+              <span>
+                {friendLetters[letter].from} · {letter + 1}/{friendLetters.length}
+              </span>
+              <button type="button" onClick={() => setLetter((index) => (index + 1) % friendLetters.length)} aria-label="Next letter">
+                ›
+              </button>
+            </div>
+          </div>
+        )}
+        {page === 8 && (
+          <div className={styles.strip}>
+            {(pages[7] as { nodes: PieceNode[] }).nodes.filter(isStrip).map((node, index) => (
+              <Piece key={`strip-${index}`} id={`strip-${index}`} node={node} onGo={go} flee={undefined} onRun={run} />
+            ))}
+          </div>
+        )}
         {page === 1 && (
           <div className={styles.countdown}>
             <p className={styles.count} key={count}>
@@ -341,6 +407,7 @@ export default function Book() {
             <img className={styles.present} src="/canva/d8408c52ddb203fde5ed3224b5364b42.png" alt="" />
           </div>
         )}
+      </div>
       </div>
     </main>
   );
