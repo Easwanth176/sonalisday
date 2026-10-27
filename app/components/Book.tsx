@@ -86,17 +86,18 @@ function isStrip(node: PieceNode) {
   return stripIds.some((id) => node.image?.startsWith(id));
 }
 
-function collectStrip(nodes: PieceNode[]): PieceNode[] {
-  return nodes.flatMap((node) => (isStrip(node) ? [node] : []).concat(node.children ? collectStrip(node.children) : []));
-}
-
-const stripNodes = (pages as { nodes: PieceNode[] }[]).flatMap((entry) => collectStrip(entry.nodes));
-
 const friendDump = [
-  { src: "/photos/friends/autumn.jpg", focus: "center 44%", x: 28, y: 24, w: 270, h: 350, rot: -8, zoom: 1.3 },
-  { src: "/photos/friends/swings.jpg", focus: "center 30%", x: 250, y: 70, w: 250, h: 340, rot: 5, zoom: 1 },
-  { src: "/photos/friends/swagath.jpg", focus: "center 18%", x: 90, y: 340, w: 250, h: 320, rot: -4, zoom: 1 },
+  { src: "/photos/friends/autumn.jpg", focus: "center 44%", x: 48, y: 24, w: 250, h: 312, rot: -9, zoom: 1.3 },
+  { src: "/photos/friends/swings.jpg", focus: "center 30%", x: 338, y: 40, w: 200, h: 248, rot: 8, zoom: 1 },
+  { src: "/photos/friends/swagath.jpg", focus: "center 18%", x: 250, y: 400, w: 286, h: 320, rot: -4, zoom: 1 },
+  { src: "/photos/friends/restaurant.jpg", focus: "40% 66%", x: 940, y: 28, w: 230, h: 272, rot: 11, zoom: 1 },
+  { src: "/photos/friends/night.jpg", focus: "74% 40%", x: 930, y: 360, w: 236, h: 286, rot: -8, zoom: 1 },
+  { src: "/photos/friends/ethnic.jpg", focus: "center 24%", x: 568, y: 168, w: 328, h: 418, rot: 2, zoom: 1, hero: true },
 ];
+
+function hideDumpFrames(node: PieceNode) {
+  return Boolean(node.image?.startsWith("9a36de7b") || node.image?.startsWith("7f01a611") || node.image?.startsWith("afdc7ec"));
+}
 
 function words(text: string) {
   if (text.includes("the man who")) return forHer;
@@ -115,6 +116,16 @@ function hideOnCountdown(node: PieceNode) {
   return Boolean(node.image?.startsWith("09a443") || node.text?.includes("Click on the cake"));
 }
 
+function finaleSpot(image?: string) {
+  if (!image) return;
+  if (image.startsWith("d76124585e79")) return { x: 150, y: 308, w: 420, h: 200 };
+  if (image.startsWith("f2153bc04942")) return { x: 155, y: 598 };
+  if (image.startsWith("da3e532ae2a2")) return { x: 330, y: 564 };
+  if (image.startsWith("0e621821ffcd")) return { x: 380.5, y: 614.5 };
+  if (image.startsWith("78962efcb222")) return { x: 36, y: 640 };
+  if (image.startsWith("091b2330102a")) return { x: 8, y: 575 };
+}
+
 function hideLetter(node: PieceNode) {
   return Boolean(node.text?.includes("My Dearest") || node.image?.startsWith("0a6cb29e") || node.image?.startsWith("d08be1d0"));
 }
@@ -122,32 +133,6 @@ function hideLetter(node: PieceNode) {
 function linked(node: PieceNode): boolean {
   if (node.link || node.text?.trim() === "NO") return true;
   return node.children?.some(linked) ?? false;
-}
-
-const melody = [
-  60, 60, 62, 60, 65, 64, 60, 60, 62, 60, 67, 65, 60, 60, 72, 69, 65, 64, 62, 70, 70, 69, 65, 67, 65,
-];
-const holds = [
-  0.35, 0.2, 0.5, 0.5, 0.5, 0.9, 0.35, 0.2, 0.5, 0.5, 0.5, 0.9, 0.35, 0.2, 0.5, 0.5, 0.5, 0.45, 0.9, 0.35, 0.2, 0.5, 0.5, 0.5, 1.2,
-];
-
-function playSong(ctx: AudioContext) {
-  let time = ctx.currentTime + 0.05;
-  melody.forEach((midi, index) => {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = "triangle";
-    osc.frequency.value = 440 * 2 ** ((midi - 69) / 12);
-    gain.gain.setValueAtTime(0.0001, time);
-    gain.gain.exponentialRampToValueAtTime(0.08, time + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, time + holds[index]);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(time);
-    osc.stop(time + holds[index] + 0.02);
-    time += holds[index] * 0.92;
-  });
-  return (time - ctx.currentTime) * 1000;
 }
 
 function Piece({
@@ -163,21 +148,28 @@ function Piece({
   flee: { x: number; y: number } | undefined;
   onRun: (id: string, node: PieceNode) => void;
 }) {
-  if (node.image && hiddenStickers.has(node.image) && !node.children) return null;
+  if (isStrip(node) || hideDumpFrames(node) || (node.image && hiddenStickers.has(node.image) && !node.children)) return null;
   const isNo = node.text?.trim() === "NO";
-  const spot = flee ?? { x: node.x, y: node.y };
+  const isLetter = Boolean(node.text?.includes("the man who"));
+  const isBright = Boolean(node.text?.includes("a little brighter"));
+  const isOrdinary = Boolean(node.text?.includes("a way of making"));
+  const finale = finaleSpot(node.image);
+  const spot = flee ?? {
+    x: isLetter ? 728 : isOrdinary ? 168 : finale?.x ?? node.x,
+    y: isLetter ? 196 : isOrdinary ? 530 : finale?.y ?? node.y,
+  };
   const clickable = Boolean(node.link) || isNo;
   const style: CSSProperties = {
     left: spot.x,
     top: spot.y,
-    width: node.w,
-    height: node.h,
+    width: isLetter ? 196 : isOrdinary ? 384 : finale?.w ?? node.w,
+    height: isLetter ? 470 : isBright ? 112 : isOrdinary ? 32 : finale?.h ?? node.h,
     transform: node.r ? `rotate(${node.r}deg)` : undefined,
-    overflow: node.image && !node.children ? "hidden" : "visible",
+    overflow: (node.image && !node.children) || isOrdinary ? "hidden" : "visible",
     pointerEvents: linked(node) ? "auto" : "none",
     transition: isNo ? "left 0.18s ease, top 0.18s ease" : undefined,
     cursor: clickable ? "pointer" : undefined,
-    zIndex: clickable ? 3 : 1,
+    zIndex: clickable || isOrdinary ? 3 : 1,
   };
 
   const useCrop = Boolean(node.image && !node.path && node.iw && node.iw > node.w * 0.45);
@@ -221,12 +213,12 @@ function Piece({
           className={styles.label}
           style={{
             fontFamily: fontFamily[node.font || "Railey"],
-            fontSize: node.size,
+            fontSize: isLetter ? 15 : isBright ? 22 : isOrdinary ? 16 : node.size,
             color: node.color || "#1a1a1a",
             textAlign: (node.align as CSSProperties["textAlign"]) || "center",
             justifyContent: node.align === "center" ? "center" : "flex-start",
             alignItems: node.path || (node.size || 0) > 40 ? "center" : "flex-start",
-            lineHeight: node.text.includes("\n") ? 1.15 : 1.05,
+            lineHeight: isLetter ? 1.28 : isOrdinary ? 1.05 : node.text.includes("\n") ? 1.15 : 1.12,
             display: "flex",
           }}
         >
@@ -275,13 +267,9 @@ export default function Book() {
   const fitRef = useRef<HTMLElement>(null);
   const [page, setPage] = useState(0);
   const [scale, setScale] = useState(0);
-  const [on, setOn] = useState(true);
   const [flee, setFlee] = useState<Record<string, { x: number; y: number }>>({});
   const [count, setCount] = useState(3);
   const [letter, setLetter] = useState(0);
-  const audio = useRef<AudioContext | null>(null);
-  const timer = useRef<number | null>(null);
-  const onRef = useRef(true);
 
   useEffect(() => {
     const box = fitRef.current;
@@ -308,6 +296,16 @@ export default function Book() {
   }, []);
 
   useEffect(() => {
+    if (page !== 7) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "ArrowRight") setLetter((index) => (index + 1) % friendLetters.length);
+      if (event.key === "ArrowLeft") setLetter((index) => (index + friendLetters.length - 1) % friendLetters.length);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [page]);
+
+  useEffect(() => {
     if (page !== 1) return;
     setCount(3);
     const timers = [
@@ -318,41 +316,12 @@ export default function Book() {
     return () => timers.forEach((id) => window.clearTimeout(id));
   }, [page]);
 
-  const loop = () => {
-    const ctx = audio.current;
-    if (!ctx || !onRef.current) return;
-    const wait = playSong(ctx);
-    timer.current = window.setTimeout(loop, wait + 1400);
-  };
-
-  const start = () => {
-    if (!onRef.current) return;
-    const ctx = audio.current ?? new AudioContext();
-    audio.current = ctx;
-    if (ctx.state === "suspended") void ctx.resume();
-    if (timer.current) return;
-    loop();
-  };
-
-  const toggle = () => {
-    const next = !onRef.current;
-    onRef.current = next;
-    setOn(next);
-    if (!next && timer.current) {
-      window.clearTimeout(timer.current);
-      timer.current = null;
-    }
-    if (next) start();
-  };
-
   const go = (link: string) => {
-    start();
     const index = Number(link.replace("#page-", ""));
     if (index >= 0 && index < pages.length) setPage(index);
   };
 
   const run = (id: string, node: PieceNode) => {
-    start();
     setFlee((current) => ({
       ...current,
       [id]: {
@@ -366,43 +335,70 @@ export default function Book() {
 
   return (
     <main className={styles.fit} ref={fitRef}>
-      <button className={styles.sound} onClick={toggle} aria-label={on ? "Pause music" : "Play music"}>
-        {on ? "♪" : "×"}
-      </button>
       <div className={styles.frame} style={{ width: STAGE_W * scale, height: STAGE_H * scale }}>
       <div className={styles.stage} style={{ transform: `scale(${scale})` }}>
         {current.nodes.map((node, index) =>
-          (page === 1 && hideOnCountdown(node)) || (page === 6 && hideLetter(node)) || (page === 7 && isStrip(node)) ? null : (
+          (page === 1 && hideOnCountdown(node)) ||
+          (page === 6 && (hideLetter(node) || hideDumpFrames(node))) ? null : (
             <Piece key={`${page}-${index}`} id={`${page}-${index}`} node={node} onGo={go} flee={flee[`${page}-${index}`]} onRun={run} />
           ),
         )}
         {page === 6 &&
           friendDump.map((shot) => (
-            <div key={shot.src} className={styles.dump} style={{ left: shot.x, top: shot.y, width: shot.w, height: shot.h, transform: `rotate(${shot.rot}deg)` }}>
+            <div
+              key={shot.src}
+              className={shot.hero ? styles.hero : styles.dump}
+              style={{ left: shot.x, top: shot.y, width: shot.w, height: shot.h, transform: `rotate(${shot.rot}deg)` }}
+            >
               <img src={shot.src} alt="" style={{ objectPosition: shot.focus, transform: `scale(${shot.zoom})` }} />
             </div>
           ))}
         {page === 7 && (
-          <div className={styles.letters}>
+          <div
+            className={styles.letters}
+            key={letter}
+            role="button"
+            tabIndex={0}
+            onClick={() => setLetter((index) => (index + 1) % friendLetters.length)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") setLetter((index) => (index + 1) % friendLetters.length);
+            }}
+          >
+            <p className={styles.from}>From {friendLetters[letter].from}</p>
             <p className={styles.note}>{friendLetters[letter].text}</p>
             <div className={styles.turns}>
-              <button type="button" onClick={() => setLetter((index) => (index + friendLetters.length - 1) % friendLetters.length)} aria-label="Previous letter">
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setLetter((index) => (index + friendLetters.length - 1) % friendLetters.length);
+                }}
+                aria-label="Previous letter"
+              >
                 ‹
               </button>
-              <span>
-                {friendLetters[letter].from} · {letter + 1}/{friendLetters.length}
+              <span className={styles.dots}>
+                {friendLetters.map((_, index) => (
+                  <i key={index} className={index === letter ? styles.dotOn : styles.dot} />
+                ))}
               </span>
-              <button type="button" onClick={() => setLetter((index) => (index + 1) % friendLetters.length)} aria-label="Next letter">
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setLetter((index) => (index + 1) % friendLetters.length);
+                }}
+                aria-label="Next letter"
+              >
                 ›
               </button>
             </div>
+            <p className={styles.hint}>tap the card for the next letter</p>
           </div>
         )}
         {page === 8 && (
-          <div className={styles.strip}>
-            {stripNodes.map((node, index) => (
-              <Piece key={`strip-${index}`} id={`strip-${index}`} node={node} onGo={go} flee={undefined} onRun={run} />
-            ))}
+          <div className={styles.us}>
+            <img src="/photos/us-rot.jpg" alt="" />
           </div>
         )}
         {page === 1 && (
