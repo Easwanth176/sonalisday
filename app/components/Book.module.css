@@ -266,11 +266,11 @@
 
 .us {
   position: absolute;
-  left: 214px;
-  top: 354px;
+  left: 198px;
+  top: 332px;
   z-index: 2;
-  width: 304px;
-  height: 108px;
+  width: 370px;
+  height: 138px;
   overflow: hidden;
   pointer-events: none;
 }

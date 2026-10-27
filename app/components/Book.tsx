@@ -116,14 +116,15 @@ function hideOnCountdown(node: PieceNode) {
   return Boolean(node.image?.startsWith("09a443") || node.text?.includes("Click on the cake"));
 }
 
-function finaleSpot(image?: string) {
+function finaleSpot(image?: string): { x: number; y: number; w?: number; h?: number; scale?: number } | undefined {
   if (!image) return;
-  if (image.startsWith("d76124585e79")) return { x: 150, y: 308, w: 420, h: 200 };
-  if (image.startsWith("f2153bc04942")) return { x: 155, y: 598 };
-  if (image.startsWith("da3e532ae2a2")) return { x: 330, y: 564 };
-  if (image.startsWith("0e621821ffcd")) return { x: 380.5, y: 614.5 };
-  if (image.startsWith("78962efcb222")) return { x: 36, y: 640 };
-  if (image.startsWith("091b2330102a")) return { x: 8, y: 575 };
+  if (image.startsWith("d76124585e79")) return { x: 216.5, y: 319.5, w: 332.6, h: 187.3, scale: 1.4 };
+  if (image.startsWith("fd238e91686f")) return { x: 197.3, y: 254 };
+  if (image.startsWith("f2153bc04942")) return { x: 201, y: 568 };
+  if (image.startsWith("da3e532ae2a2")) return { x: 366.75, y: 531.75, scale: 0.82 };
+  if (image.startsWith("0e621821ffcd")) return { x: 417.2, y: 582.2, scale: 0.82 };
+  if (image.startsWith("78962efcb222")) return { x: 36, y: 603 };
+  if (image.startsWith("091b2330102a")) return { x: 8, y: 538 };
 }
 
 function hideLetter(node: PieceNode) {
@@ -155,16 +156,17 @@ function Piece({
   const isOrdinary = Boolean(node.text?.includes("a way of making"));
   const finale = finaleSpot(node.image);
   const spot = flee ?? {
-    x: isLetter ? 728 : isOrdinary ? 168 : finale?.x ?? node.x,
-    y: isLetter ? 196 : isOrdinary ? 530 : finale?.y ?? node.y,
+    x: isLetter ? 755 : isOrdinary ? 193 : finale?.x ?? node.x,
+    y: isLetter ? 237 : isOrdinary ? 538 : finale?.y ?? node.y,
   };
   const clickable = Boolean(node.link) || isNo;
+  const turn = [node.r ? `rotate(${node.r}deg)` : "", finale?.scale ? `scale(${finale.scale})` : ""].join(" ").trim();
   const style: CSSProperties = {
     left: spot.x,
     top: spot.y,
-    width: isLetter ? 196 : isOrdinary ? 384 : finale?.w ?? node.w,
-    height: isLetter ? 470 : isBright ? 112 : isOrdinary ? 32 : finale?.h ?? node.h,
-    transform: node.r ? `rotate(${node.r}deg)` : undefined,
+    width: isLetter ? 226 : isOrdinary ? 384 : finale?.w ?? node.w,
+    height: isLetter ? 440 : isBright ? 112 : isOrdinary ? 32 : finale?.h ?? node.h,
+    transform: turn || undefined,
     overflow: (node.image && !node.children) || isOrdinary ? "hidden" : "visible",
     pointerEvents: linked(node) ? "auto" : "none",
     transition: isNo ? "left 0.18s ease, top 0.18s ease" : undefined,
