@@ -86,6 +86,12 @@ function isStrip(node: PieceNode) {
   return stripIds.some((id) => node.image?.startsWith(id));
 }
 
+function collectStrip(nodes: PieceNode[]): PieceNode[] {
+  return nodes.flatMap((node) => (isStrip(node) ? [node] : []).concat(node.children ? collectStrip(node.children) : []));
+}
+
+const stripNodes = (pages as { nodes: PieceNode[] }[]).flatMap((entry) => collectStrip(entry.nodes));
+
 const friendDump = [
   { src: "/photos/friends/autumn.jpg", focus: "center 44%", x: 28, y: 24, w: 270, h: 350, rot: -8, zoom: 1.3 },
   { src: "/photos/friends/swings.jpg", focus: "center 30%", x: 250, y: 70, w: 250, h: 340, rot: 5, zoom: 1 },
@@ -394,7 +400,7 @@ export default function Book() {
         )}
         {page === 8 && (
           <div className={styles.strip}>
-            {(pages[7] as { nodes: PieceNode[] }).nodes.filter(isStrip).map((node, index) => (
+            {stripNodes.map((node, index) => (
               <Piece key={`strip-${index}`} id={`strip-${index}`} node={node} onGo={go} flee={undefined} onRun={run} />
             ))}
           </div>
