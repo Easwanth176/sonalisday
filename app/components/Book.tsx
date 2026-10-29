@@ -32,8 +32,8 @@ type PieceNode = {
   children?: PieceNode[];
 };
 
-const portraits: Record<string, { src: string; focus: string }> = {
-  "234e8aa46a2903fe87049b93e93ee311.jpg": { src: "/photos/temple.jpg", focus: "center 32%" },
+const portraits: Record<string, { src: string; focus: string; zoom?: number }> = {
+  "234e8aa46a2903fe87049b93e93ee311.jpg": { src: "/photos/mirror.jpg", focus: "34% 46%", zoom: 1.12 },
   "9a36de7b4d225b5be0850dbaf7ed1314.jpg": { src: "/photos/friends/restaurant.jpg", focus: "40% 66%" },
   "7f01a6113e0c2307d986b2e32cf80270.jpg": { src: "/photos/friends/night.jpg", focus: "74% 40%" },
   "f0bb9fd07a59b577b5f3dbd2c8c39f41.jpg": { src: "/photos/friends/restaurant.jpg", focus: "40% 68%" },
@@ -59,7 +59,7 @@ const fontFamily: Record<string, string> = {
 };
 
 const forHer =
-  "Happy birthday to the woman who makes my world brighter. I don't say it enough, but I'm endlessly grateful for your kindness, your strength, and the way you love me so effortlessly. Watching you grow, chase your dreams, and stay true to yourself inspires me every day. I hope this new year brings you success, peace, and all the joy you give so freely to others. Thank you for being exactly who you are. I love you more than words could ever capture.\nHappy birthday, my love.";
+  "Happy birthday, Chonu.\n\nI don't tell you this enough. You make things feel easier just by being around, and I'm really grateful for that. For your kindness, for how you show up, and for never pretending to be anyone else. I'm proud of you, genuinely, for the way you keep going after what you want. I hope this year is kind to you, the way you are to everyone else.\n\nHappy birthday, Chonu.";
 
 const friendLetters = [
   {
@@ -92,7 +92,7 @@ const friendDump = [
   { src: "/photos/friends/swagath.jpg", focus: "center 18%", x: 250, y: 400, w: 286, h: 320, rot: -4, zoom: 1 },
   { src: "/photos/friends/restaurant.jpg", focus: "40% 66%", x: 940, y: 28, w: 230, h: 272, rot: 11, zoom: 1 },
   { src: "/photos/friends/night.jpg", focus: "74% 40%", x: 930, y: 360, w: 236, h: 286, rot: -8, zoom: 1 },
-  { src: "/photos/friends/ethnic.jpg", focus: "center 24%", x: 568, y: 168, w: 328, h: 418, rot: 2, zoom: 1, hero: true },
+  { src: "/videos/friends.mp4", focus: "center center", x: 568, y: 168, w: 328, h: 418, rot: 2, zoom: 1, hero: true, video: true },
 ];
 
 function hideDumpFrames(node: PieceNode) {
@@ -142,18 +142,21 @@ function Piece({
   onGo,
   flee,
   onRun,
+  compact,
 }: {
   node: PieceNode;
   id: string;
   onGo: (link: string) => void;
   flee: { x: number; y: number } | undefined;
   onRun: (id: string, node: PieceNode) => void;
+  compact: boolean;
 }) {
   if (isStrip(node) || hideDumpFrames(node) || (node.image && hiddenStickers.has(node.image) && !node.children)) return null;
   const isNo = node.text?.trim() === "NO";
   const isLetter = Boolean(node.text?.includes("the man who"));
   const isBright = Boolean(node.text?.includes("a little brighter"));
   const isOrdinary = Boolean(node.text?.includes("a way of making"));
+  const bigLetter = isLetter && compact;
   const finale = finaleSpot(node.image);
   const spot = flee ?? {
     x: isLetter ? 755 : isOrdinary ? 193 : finale?.x ?? node.x,
@@ -167,13 +170,14 @@ function Piece({
     width: isLetter ? 226 : isOrdinary ? 384 : finale?.w ?? node.w,
     height: isLetter ? 440 : isBright ? 112 : isOrdinary ? 32 : finale?.h ?? node.h,
     transform: turn || undefined,
-    overflow: (node.image && !node.children) || isOrdinary ? "hidden" : "visible",
-    pointerEvents: linked(node) ? "auto" : "none",
+    overflow: bigLetter ? "auto" : (node.image && !node.children) || isOrdinary ? "hidden" : "visible",
+    pointerEvents: linked(node) || bigLetter ? "auto" : "none",
     transition: isNo ? "left 0.18s ease, top 0.18s ease" : undefined,
     cursor: clickable ? "pointer" : undefined,
     zIndex: clickable || isOrdinary ? 3 : 1,
   };
 
+  const portrait = node.photo && node.image ? portraits[node.image] : undefined;
   const useCrop = Boolean(node.image && !node.path && node.iw && node.iw > node.w * 0.45);
   const body = (
     <>
@@ -204,8 +208,9 @@ function Piece({
                   width: "100%",
                   height: "100%",
                   objectFit: node.photo ? "cover" : "fill",
-                  objectPosition: node.photo ? portraits[node.image]?.focus : undefined,
-                  transform: node.flip ? "scaleX(-1)" : undefined,
+                  objectPosition: portrait?.focus,
+                  transformOrigin: portrait?.zoom ? portrait.focus : undefined,
+                  transform: [node.flip ? "scaleX(-1)" : "", portrait?.zoom ? `scale(${portrait.zoom})` : ""].filter(Boolean).join(" ") || undefined,
                 }
           }
         />
@@ -214,8 +219,9 @@ function Piece({
         <span
           className={styles.label}
           style={{
+            ...(bigLetter ? { position: "relative", inset: "auto", minHeight: "100%" } : null),
             fontFamily: fontFamily[node.font || "Railey"],
-            fontSize: isLetter ? 15 : isBright ? 22 : isOrdinary ? 16 : node.size,
+            fontSize: bigLetter ? 22 : isLetter ? 15 : isBright ? 22 : isOrdinary ? 16 : node.size,
             color: node.color || "#1a1a1a",
             textAlign: (node.align as CSSProperties["textAlign"]) || "center",
             justifyContent: node.align === "center" ? "center" : "flex-start",
@@ -228,7 +234,7 @@ function Piece({
         </span>
       )}
       {node.children?.map((child, index) => (
-        <Piece key={index} id={`${id}.${index}`} node={child} onGo={onGo} flee={undefined} onRun={onRun} />
+        <Piece key={index} id={`${id}.${index}`} node={child} onGo={onGo} flee={undefined} onRun={onRun} compact={compact} />
       ))}
     </>
   );
@@ -259,7 +265,7 @@ function Piece({
   }
 
   return (
-    <div className={styles.piece} style={style}>
+    <div className={bigLetter ? `${styles.piece} ${styles.scroll}` : styles.piece} style={style}>
       {body}
     </div>
   );
@@ -269,9 +275,14 @@ export default function Book() {
   const fitRef = useRef<HTMLElement>(null);
   const [page, setPage] = useState(0);
   const [scale, setScale] = useState(0);
+  const [turned, setTurned] = useState(false);
   const [flee, setFlee] = useState<Record<string, { x: number; y: number }>>({});
   const [count, setCount] = useState(3);
   const [letter, setLetter] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const musicRef = useRef<HTMLAudioElement | null>(null);
+  const musicButtonRef = useRef<HTMLButtonElement | null>(null);
+  const wantMusic = useRef(true);
 
   useEffect(() => {
     const box = fitRef.current;
@@ -281,7 +292,10 @@ export default function Book() {
       const width = Math.min(box.clientWidth, view?.width ?? window.innerWidth);
       const height = Math.min(box.clientHeight, view?.height ?? window.innerHeight);
       if (!width || !height) return;
-      setScale(Math.min(width / STAGE_W, height / STAGE_H));
+      const flat = Math.min(width / STAGE_W, height / STAGE_H);
+      const side = Math.min(height / STAGE_W, width / STAGE_H);
+      setTurned(side > flat);
+      setScale(Math.max(flat, side));
     };
     fit();
     const observer = new ResizeObserver(fit);
@@ -306,6 +320,35 @@ export default function Book() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [page]);
+
+  useEffect(() => {
+    const audio = musicRef.current;
+    if (!audio) return;
+    audio.volume = 1;
+
+    const start = () => {
+      if (!wantMusic.current || !audio.paused) return;
+      audio.play().then(() => setPlaying(true)).catch(() => {});
+    };
+
+    if (!audio.paused) setPlaying(true);
+    start();
+    audio.addEventListener("canplay", start);
+
+    const onGesture = (event: Event) => {
+      const target = event.target;
+      if (target instanceof Node && musicButtonRef.current?.contains(target)) return;
+      start();
+    };
+    window.addEventListener("pointerdown", onGesture, true);
+    window.addEventListener("keydown", onGesture, true);
+
+    return () => {
+      audio.removeEventListener("canplay", start);
+      window.removeEventListener("pointerdown", onGesture, true);
+      window.removeEventListener("keydown", onGesture, true);
+    };
+  }, []);
 
   useEffect(() => {
     if (page !== 1) return;
@@ -334,15 +377,54 @@ export default function Book() {
   };
 
   const current = pages[page] as { nodes: PieceNode[] };
+  const compact = scale > 0 && scale < 0.75;
+
+  const toggleMusic = () => {
+    const audio = musicRef.current;
+    if (!audio) return;
+    if (audio.paused) {
+      wantMusic.current = true;
+      audio.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+    } else {
+      wantMusic.current = false;
+      audio.pause();
+      setPlaying(false);
+    }
+  };
 
   return (
     <main className={styles.fit} ref={fitRef}>
-      <div className={styles.frame} style={{ width: STAGE_W * scale, height: STAGE_H * scale }}>
-      <div className={styles.stage} style={{ transform: `scale(${scale})` }}>
+      <audio ref={musicRef} src="/music/Memories-Bring-Back.mp3" autoPlay loop preload="auto" />
+      <button
+        ref={musicButtonRef}
+        type="button"
+        className={styles.music}
+        onPointerDown={(event) => event.stopPropagation()}
+        onClick={toggleMusic}
+        aria-label={playing ? "Pause music" : "Play music"}
+      >
+        {playing ? "pause" : "play"}
+      </button>
+      <div
+        className={styles.frame}
+        style={turned ? { width: STAGE_H * scale, height: STAGE_W * scale } : { width: STAGE_W * scale, height: STAGE_H * scale }}
+      >
+      <div
+        className={compact ? `${styles.stage} ${styles.compact}` : styles.stage}
+        style={{ transform: turned ? `translateX(${STAGE_H * scale}px) rotate(90deg) scale(${scale})` : `scale(${scale})` }}
+      >
         {current.nodes.map((node, index) =>
           (page === 1 && hideOnCountdown(node)) ||
           (page === 6 && (hideLetter(node) || hideDumpFrames(node))) ? null : (
-            <Piece key={`${page}-${index}`} id={`${page}-${index}`} node={node} onGo={go} flee={flee[`${page}-${index}`]} onRun={run} />
+            <Piece
+              key={`${page}-${index}`}
+              id={`${page}-${index}`}
+              node={node}
+              onGo={go}
+              flee={flee[`${page}-${index}`]}
+              onRun={run}
+              compact={compact}
+            />
           ),
         )}
         {page === 6 &&
@@ -352,7 +434,23 @@ export default function Book() {
               className={shot.hero ? styles.hero : styles.dump}
               style={{ left: shot.x, top: shot.y, width: shot.w, height: shot.h, transform: `rotate(${shot.rot}deg)` }}
             >
-              <img src={shot.src} alt="" style={{ objectPosition: shot.focus, transform: `scale(${shot.zoom})` }} />
+              {shot.video ? (
+                <video
+                  src={shot.src}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="auto"
+                  style={{ objectPosition: shot.focus, transform: `scale(${shot.zoom})` }}
+                  onClick={(event) => {
+                    event.currentTarget.muted = !event.currentTarget.muted;
+                    event.currentTarget.play();
+                  }}
+                />
+              ) : (
+                <img src={shot.src} alt="" style={{ objectPosition: shot.focus, transform: `scale(${shot.zoom})` }} />
+              )}
             </div>
           ))}
         {page === 7 && (
