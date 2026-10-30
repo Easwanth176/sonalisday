@@ -272,7 +272,7 @@
 
 .us {
   position: absolute;
-  left: 198px;
+  left: 19px;
   top: 332px;
   z-index: 2;
   width: 370px;
@@ -312,6 +312,120 @@
   font-size: 11px;
   letter-spacing: 0.03em;
   color: #7a7259;
+}
+
+.tap {
+  animation: breathe 1.8s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    scale: 1;
+  }
+  50% {
+    scale: 1.06;
+  }
+}
+
+.guide {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 14px;
+  z-index: 8;
+  width: fit-content;
+  margin: 0 auto;
+  padding: 9px 22px;
+  border-radius: 999px;
+  background: rgba(36, 48, 68, 0.88);
+  color: #fbf7ec;
+  font-family: var(--font-arimo), sans-serif;
+  font-size: 19px;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 8px 20px rgba(36, 48, 68, 0.25);
+  animation:
+    guideIn 0.3s ease,
+    guideFloat 2.6s ease-in-out 0.3s infinite;
+}
+
+.compact .guide {
+  padding: 12px 30px;
+  font-size: 28px;
+}
+
+@keyframes guideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.9);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.04) rotate(-1.5deg);
+  }
+  80% {
+    transform: translateY(0) scale(1) rotate(1.5deg);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes guideFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.ripple {
+  position: fixed;
+  z-index: 30;
+  width: 46px;
+  height: 46px;
+  margin: -23px 0 0 -23px;
+  border: 2px solid rgba(36, 48, 68, 0.55);
+  border-radius: 50%;
+  background: rgba(142, 182, 230, 0.25);
+  pointer-events: none;
+  animation: ripple 0.6s ease-out forwards;
+}
+
+@keyframes ripple {
+  from {
+    opacity: 1;
+    transform: scale(0.3);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+
+.rotate {
+  position: fixed;
+  top: calc(14px + env(safe-area-inset-top));
+  left: 0;
+  right: 0;
+  z-index: 20;
+  width: fit-content;
+  margin: 0 auto;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: #243044;
+  color: #fbf7ec;
+  font-family: var(--font-arimo), sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+  box-shadow: 0 8px 18px rgba(36, 48, 68, 0.28);
+  animation: guideIn 0.3s ease;
 }
 
 .scroll {

@@ -1,12 +1,24 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { CSSProperties } from "react";
+import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
 import pages from "../data/pages.json";
 import styles from "./Book.module.css";
 
 const STAGE_W = 1366;
 const STAGE_H = 768;
+const MUSIC_START = 5;
+
+const hints: Record<number, string> = {
+  0: "tap anywhere to open",
+  2: "tap anywhere to continue",
+  3: "tap YES or NO",
+  4: "tap OKAY to try again",
+  5: "tap a gift to open it",
+  6: "tap the video for sound · tap anywhere else to go back",
+  7: "tap outside the card to go back to your gifts",
+  8: "tap anywhere to start again",
+};
 
 type PieceNode = {
   x: number;
@@ -258,7 +270,7 @@ function Piece({
   const link = giftLink(node.link);
   if (link) {
     return (
-      <button className={styles.piece} style={style} onClick={() => onGo(link)}>
+      <button className={node.w < STAGE_W ? `${styles.piece} ${styles.tap}` : styles.piece} style={style} onClick={() => onGo(link)}>
         {body}
       </button>
     );
@@ -283,6 +295,26 @@ export default function Book() {
   const musicRef = useRef<HTMLAudioElement | null>(null);
   const musicButtonRef = useRef<HTMLButtonElement | null>(null);
   const wantMusic = useRef(true);
+  const [hintOn, setHintOn] = useState(false);
+  const [nudge, setNudge] = useState(0);
+  const [ripples, setRipples] = useState<{ id: number; x: number; y: number }[]>([]);
+
+  useEffect(() => {
+    setHintOn(false);
+    const timer = window.setTimeout(() => setHintOn(true), 300);
+    return () => window.clearTimeout(timer);
+  }, [page]);
+
+  const onTouch = (event: ReactPointerEvent) => {
+    const id = event.timeStamp;
+    setRipples((current) => [...current, { id, x: event.clientX, y: event.clientY }]);
+    window.setTimeout(() => setRipples((current) => current.filter((ripple) => ripple.id !== id)), 650);
+    const target = event.target;
+    if (target instanceof Element && !target.closest("button, video, [role='button']")) {
+      setHintOn(true);
+      setNudge((count) => count + 1);
+    }
+  };
 
   useEffect(() => {
     const box = fitRef.current;
@@ -326,6 +358,17 @@ export default function Book() {
     if (!audio) return;
     audio.volume = 1;
 
+    const skipIntro = () => {
+      if (audio.currentTime < MUSIC_START) audio.currentTime = MUSIC_START;
+    };
+    const loop = () => {
+      audio.currentTime = MUSIC_START;
+      audio.play().catch(() => {});
+    };
+    if (audio.readyState >= 1) skipIntro();
+    audio.addEventListener("loadedmetadata", skipIntro);
+    audio.addEventListener("ended", loop);
+
     const start = () => {
       if (!wantMusic.current || !audio.paused) return;
       audio.play().then(() => setPlaying(true)).catch(() => {});
@@ -344,6 +387,8 @@ export default function Book() {
     window.addEventListener("keydown", onGesture, true);
 
     return () => {
+      audio.removeEventListener("loadedmetadata", skipIntro);
+      audio.removeEventListener("ended", loop);
       audio.removeEventListener("canplay", start);
       window.removeEventListener("pointerdown", onGesture, true);
       window.removeEventListener("keydown", onGesture, true);
@@ -393,8 +438,12 @@ export default function Book() {
   };
 
   return (
-    <main className={styles.fit} ref={fitRef}>
-      <audio ref={musicRef} src="/music/Memories-Bring-Back.mp3" autoPlay loop preload="auto" />
+    <main className={styles.fit} ref={fitRef} onPointerDown={onTouch}>
+      <audio ref={musicRef} src={`/music/Memories-Bring-Back.mp3#t=${MUSIC_START}`} autoPlay preload="auto" />
+      {ripples.map((ripple) => (
+        <span key={ripple.id} className={styles.ripple} style={{ left: ripple.x, top: ripple.y }} />
+      ))}
+      {turned && page === 0 && <p className={styles.rotate}>turn your phone sideways ↻</p>}
       <button
         ref={musicButtonRef}
         type="button"
@@ -500,6 +549,11 @@ export default function Book() {
           <div className={styles.us}>
             <img src="/photos/us-rot.jpg" alt="" />
           </div>
+        )}
+        {hintOn && hints[page] && (
+          <p key={`${page}-${nudge}`} className={styles.guide}>
+            {hints[page]}
+          </p>
         )}
         {page === 1 && (
           <div className={styles.countdown}>
